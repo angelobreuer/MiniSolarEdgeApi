@@ -3,10 +3,11 @@ using MiniSolarEdgeApi.Modbus;
 using MiniSolarEdgeApi.Photovoltaic;
 
 var builder = WebApplication.CreateBuilder(args);
+var endpoint = IPEndPoint.Parse(builder.Configuration.GetValue<string>("Endpoint")!);
 
 builder.Services.AddHostedService<PhotovoltaicServiceHost>();
 builder.Services.AddSingleton<IPhotovoltaicService, PhotovoltaicService>();
-builder.Services.AddSingleton<IModbusClient>(new ModbusClient(IPEndPoint.Parse("192.168.5.2:502")));
+builder.Services.AddSingleton<IModbusClient>(new ModbusClient(endpoint));
 
 var app = builder.Build();
 
