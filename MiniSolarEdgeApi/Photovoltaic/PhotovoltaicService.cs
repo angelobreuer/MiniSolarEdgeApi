@@ -40,14 +40,11 @@ internal sealed class PhotovoltaicService : IObservable<PhotovoltaicStatus>, IPh
 
         try
         {
-            while (!cancellationToken.IsCancellationRequested)
+            do
             {
                 await FetchAsync(cancellationToken).ConfigureAwait(false);
-
-                await periodicTimer
-                    .WaitForNextTickAsync(cancellationToken)
-                    .ConfigureAwait(false);
             }
+            while (await periodicTimer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false));
         }
         catch (OperationCanceledException)
         {
@@ -106,10 +103,6 @@ internal sealed class PhotovoltaicService : IObservable<PhotovoltaicStatus>, IPh
             {
                 registerValues = await _modbusClient
                     .ReadAsync(_registers, cancellationToken)
-                    .ConfigureAwait(false);
-
-                await Task
-                    .Delay(TimeSpan.FromSeconds(10), cancellationToken)
                     .ConfigureAwait(false);
 
                 break;

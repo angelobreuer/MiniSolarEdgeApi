@@ -41,6 +41,25 @@ internal sealed class ModbusClient : IModbusClient
     /// </returns>
     public async ValueTask<ImmutableArray<ModbusValue>> ReadAsync(ImmutableArray<ModbusRegister> registers, CancellationToken cancellationToken = default)
     {
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var values = await ReadInternalAsync(registers, cancellationToken).ConfigureAwait(false);
+
+            if (!values.IsDefault)
+            {
+                return values;
+            }
+
+            await Task
+                .Delay(1000, cancellationToken)
+                .ConfigureAwait(false);
+        }
+    }
+
+    private async ValueTask<ImmutableArray<ModbusValue>> ReadInternalAsync(ImmutableArray<ModbusRegister> registers, CancellationToken cancellationToken = default)
+    {
         cancellationToken.ThrowIfCancellationRequested();
 
         using var socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
@@ -61,7 +80,7 @@ internal sealed class ModbusClient : IModbusClient
                 address: register.Address,
                 count: register.Count);
 
-            bytesToArrive += register.Count * 2 + 9;
+            bytesToArrive += (register.Count * 2) + 9;
         }
 
         await socket
@@ -74,9 +93,16 @@ internal sealed class ModbusClient : IModbusClient
 
         while (bytesReceived < receiveBuffer.Length)
         {
-            bytesReceived += await socket
+            var currentBytesReceived = await socket
                 .ReceiveAsync(receiveBuffer.AsMemory(bytesReceived), SocketFlags.None, cancellationToken)
                 .ConfigureAwait(false);
+
+            if (currentBytesReceived is 0)
+            {
+                return default; // retry
+            }
+
+            bytesReceived += currentBytesReceived;
         }
 
         var receiveMemory = receiveBuffer.AsMemory();
