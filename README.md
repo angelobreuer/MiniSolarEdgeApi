@@ -5,7 +5,7 @@ Very simple HTTP API to query the SolarEdge ModBus
 
 1. Build project
 2. Put target endpoint in appsettings.json (for ModBus protocol)
-3. Open browser at localhost:<port>/api/v1/photovoltaic
+3. Open browser at localhost:\<port>/api/v1/photovoltaic
 
 ```json
 {
